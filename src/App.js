@@ -1,8 +1,9 @@
 import './App.css';
 import Board from './components/Board';
 import Keyboard from './components/Keyboard';
-import { createContext, useState } from "react"
-import { boardDefault } from './Helper/Words';
+import { createContext, useState, useEffect } from "react"
+import { boardDefault, generateWordSet } from './Helper/Words';
+import GameOver from './components/GameOver';
 
 export const AppContext = createContext();
 
@@ -10,6 +11,18 @@ function App() {
 
   const [board, setBoard] = useState(boardDefault);
   const [currentAttempt, setCurrentAttempt] = useState({attempt: 0, letterPos: 0});
+  const [wordSet, setWordSet] = useState(new Set());
+  const [disabledLetters, setDisabledLetter] = useState([]);
+  const [gameOver, setGameOver] = useState({gameOver: false, guessedWord: false});
+
+
+  const correctWord = "RIGHT";
+
+  useEffect(() => {
+      generateWordSet().then((words) =>{
+        setWordSet(words.wordSet);
+      })
+  }, []);
 
   const onSelectLetter = (keyVal) => {
     if (currentAttempt.letterPos > 4) return;
@@ -29,18 +42,53 @@ function App() {
 
   const onEnter = () =>{
     if(currentAttempt.letterPos !== 5) return;
-    setCurrentAttempt({attempt: currentAttempt.attempt + 1, letterPos: 0});
-  }
+   
+    let currentWord = "";
+    for (let i = 0; i < 5; i++){
+      currentWord += board[currentAttempt.attempt][i];
+    }
+    
+    if(wordSet.has(currentWord.toLowerCase())){
+      setCurrentAttempt({attempt: currentAttempt.attempt + 1, letterPos: 0});
+    } else {
+      alert("word not found");
+    }
+
+    if (currentWord === correctWord){
+        setGameOver({gameOver: true, guessedWord:true});
+        return;
+    }
+
+    if(currentAttempt.attempt  === 5){
+      setGameOver({gameOver:true, guessedWord:false});
+    }
+  };
 
   return (
         <div className="App">
           <nav>
             <h1>Wordle Game</h1>
           </nav>
-          <AppContext.Provider value={{board, setBoard, currentAttempt, setCurrentAttempt, onSelectLetter, onEnter, onDelete}}>
+          <AppContext.Provider value= 
+          {{ 
+            
+            board, 
+             setBoard, 
+             currentAttempt, 
+             setCurrentAttempt, 
+             onSelectLetter, 
+             onEnter, 
+             onDelete, 
+             setDisabledLetter,
+             disabledLetters,
+             correctWord, 
+             gameOver,
+             setGameOver 
+             
+             }}>
             <div className='game'>
               <Board />
-              <Keyboard />
+            {gameOver.gameOver ? <GameOver/> : <Keyboard />}
             </div>
           </AppContext.Provider>
         </div>
